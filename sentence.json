@@ -1,0 +1,42 @@
+{
+"name": "",
+"children": 
+	[
+	{
+	"name": "But",
+	"children": 
+		[
+		{"name": "",
+		"children": 
+			[
+			{"name":"the prophets"},
+			{"name":"of", 
+			"children":
+				[
+				{"name":"doom"}
+				]
+			}
+			]
+		},
+		{"name":"never"},
+		{"name":"let",
+		 "children": 
+			[
+			{"name":"their readers"},
+			{"name":"in",
+			"children":
+				[
+				{"name":"on",
+				"children": 
+					[
+					{"name":"this happy secret"}
+					]
+				}
+				]
+			}
+			]
+		}
+		]
+	}
+	]
+}

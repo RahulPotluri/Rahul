@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>Node-Link Tree</title>
+    
+<style>
+rect {
+  cursor: pointer;
+  fill: skyblue;
+  stroke: green;
+  stroke-width: 1.5px;
+}
+
+text {
+	font-size:10px;
+}
+
+.node text {
+  font: 10px sans-serif;
+  pointer-events: none;
+  text-anchor: middle;
+  color : black;
+}
+
+path.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+.node {
+  cursor: pointer;
+  stroke: #3182bd;
+  stroke-width: 1.5px;
+}
+
+.link {
+  fill: none;
+  stroke: #9ecae1;
+  stroke-width: 1.5px;
+}
+</style>
+ <script src="http://d3js.org/d3.v3.min.js"></script>
+  </head>
+  <body>
+   <div id="menu" align="center">
+<select id="graphOptions" onchange="callScript()">
+  <option value="noth">Select Layout</option>
+  <option value="collapsible">Collapsible tree layout</option>
+  <option value="force">Force directed tree layout</option>
+  <option value="reingold">Reingold-Tilford tree layout</option>
+</select>
+<input type="checkbox" id="label2" value="Hide" onclick="radioselected();">Hide Label </input>
+<input type="checkbox" id="vertical" value="vertical" onclick="vertical_tree();" >Vertical Collapsible </input>
+
+</div>
+    <div id="chart">
+    <script type="text/javascript">
+var labelshow = 1;
+var vertical = 0;
+function callScript()
+{
+var opt= document.getElementById("graphOptions").value;
+d3.select("svg").remove();
+if(opt == "collapsible")
+	{
+	collapsibleTree();
+	
+	document.getElementById("vertical").style.display = 'block';
+	}
+else if(opt == "force"){ forceDirectedTree(); }
+else if(opt == "reingold")
+	{RadialTree();}
+else {}
+}	
+
+function vertical_tree()
+{
+var a = document.getElementById("vertical");
+if(a.checked == true)
+	{
+	vertical = 1;
+	callScript();
+	}
+else
+ { vertical = 0;
+	callScript();}
+}
+
+function radioselected()
+{
+var a = document.getElementById("label2");
+if(a.checked == true)
+	{
+	labelshow = 0;
+	callScript();
+	}
+else
+	{
+	labelshow = 1;
+	callScript();
+	}
+}
+
+function collapsibleTree()
+{
+var w = 960,
+    h = 1000,
+    i = 0,
+    duration = 500,
+    root;
+
+var tree = d3.layout.tree()
+    .size([h, w - 160]);
+
+if(vertical == 1)
+{
+	var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.x, d.y]; });
+}
+else
+{
+	var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.y, d.x]; });
+
+}
+var vis = d3.select("#chart").append("svg:svg")
+    .attr("width", w)
+    .attr("height", h)
+  .append("svg:g")
+    .attr("transform", "translate(40,0)");
+
+d3.json("sentence.json", function(json) {
+  json.x0 = 800;
+  json.y0 = 0;
+  update(root = json);
+});
+
+function update(source) {
+
+  
+  var nodes = tree.nodes(root).reverse();
+
+  
+  	var node = vis.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+	if(vertical == 1)
+	{
+	var nodeEnter = node.enter().append("svg:g")
+    	.attr("class", "node")
+    	.attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; });
+    }
+	else
+	{
+	var nodeEnter = node.enter().append("svg:g")
+    	.attr("class", "node")
+    	.attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; });
+   
+	}
+ 
+  	nodeEnter.append("svg:rect")
+      .attr("x",0)
+	  .attr("y",0)
+	  .attr("width",7)
+	  .attr("height",7)
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; })
+      .on("click", click);
+	
+	if(labelshow == 1 )
+	{
+	nodeEnter.append("svg:text")
+      	.attr("x", function(d) { return d._children ? -8 : 8; })
+		.attr("y", "3em")
+      	.text(function(d) { return d.name; });
+	}
+	if(vertical == 1)
+	{
+  nodeEnter.transition()
+		.duration(duration)
+		.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+      	.select("rect")
+		.style("fill", "skyblue");
+      
+    node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+  
+	node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.x + "," + source.y + ")"; })
+      .remove();
+	}
+	else
+	{
+	nodeEnter.transition()
+		.duration(duration)
+		.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+      	.select("rect")
+		.style("fill", "skyblue");
+      
+    node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+  
+	node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+	}
+   var link = vis.selectAll("path.link")
+      .data(tree.links(nodes), function(d) { return d.target.id; });
+
+   link.enter().insert("svg:path", "g")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      })
+    .transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  
+}
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+
+d3.select(self.frameElement).style("height", "2000px");
+}
+
+
+
+
+function forceDirectedTree()
+{
+var width = 960,
+    height = 500,
+    root;
+
+var force = d3.layout.force()
+    .linkDistance(80)
+    .charge(-120)
+    .gravity(.05)
+    .size([width, height])
+    .on("tick", tick);
+
+var svg = d3.select("body").append("svg:svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var link = svg.selectAll(".link"),
+    node = svg.selectAll(".node");
+
+d3.json("sentence.json", function(error, json) {
+  root = json;
+  update();
+});
+
+function update() {
+  var nodes = flatten(root),
+      links = d3.layout.tree().links(nodes);
+
+
+  force
+      .nodes(nodes)
+      .links(links)
+      .start();
+
+  link = link.data(links, function(d) { return d.target.id; });
+
+  link.exit().remove();
+
+  link.enter().insert("line", ".node")
+      .attr("class", "link");
+
+  node = node.data(nodes, function(d) { return d.id; });
+
+  node.exit().remove();
+
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .on("click", click)
+      .call(force.drag);
+
+  nodeEnter.append("rect")
+      .attr("x", function(d) { return d.x0; })
+	  .attr("y",function(d){return d.y0})
+	  .attr("width",10)
+	  .attr("height",10)
+	  .attr("fill",color);
+
+  if(labelshow == 1 )
+	{
+  nodeEnter.append("text")
+	  .attr("dy", "2em")
+      .text(function(d) { return d.name; })
+	  .style("fill","black");
+	}
+  node.select("circle")
+      .style("fill", color);
+}
+
+function tick() {
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+}
+
+function color(d) {
+  return d._children ? "red" // collapsed package
+      : d.children ? "#c6dbef" // expanded package
+      : "#fd8d3c"; // leaf node
+}
+
+// Toggle children on click.
+function click(d) {
+  if (d3.event.defaultPrevented) return; // ignore drag
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update();
+}
+
+// Returns a list of all nodes under the root.
+function flatten(root) {
+  var nodes = [], i = 0;
+
+  function recurse(node) {
+    if (node.children) node.children.forEach(recurse);
+    if (!node.id) node.id = ++i;
+    nodes.push(node);
+  }
+
+  recurse(root);
+  return nodes;
+}
+}
+
+function RadialTree()
+{
+var diameter = 960;
+
+var tree = d3.layout.tree()
+    .size([360, diameter / 2 - 120])
+    .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
+
+var diagonal = d3.svg.diagonal.radial()
+    .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
+
+var svg = d3.select("body").append("svg:svg")
+    .attr("width", diameter)
+    .attr("height", diameter - 150)
+  .append("g")
+    .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+
+d3.json("sentence.json", function(error, root) {
+  var nodes = tree.nodes(root),
+      links = tree.links(nodes);
+
+  var link = svg.selectAll(".link")
+      .data(links)
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", diagonal);
+
+  var node = svg.selectAll(".node")
+      .data(nodes)
+    .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+
+  node.append("rect")
+      .attr("x", function(d) { return d.x0 ; })
+	  .attr("y",function(d){return d.y0})
+	  .attr("width",10)
+	  .attr("height",10)
+	  .attr("fill",color);
+
+  if(labelshow == 1 )
+	{
+  node.append("text")
+	  .attr("dy", "2em")
+      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+      .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
+      .text(function(d) { return d.name; });
+	}
+});
+
+function color(d) {
+  return d._children ? "red" // collapsed package
+      : d.children ? "#c6dbef" // expanded package
+      : "#fd8d3c"; // leaf node
+}
+
+d3.select(self.frameElement).style("height", diameter - 150 + "px");
+}   
+   </script>
+  </div>
+  </body>
+</html>
