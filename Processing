@@ -1,0 +1,150 @@
+PImage mapImage;
+int rowCount;
+Table dataTable_I,dataTable_D,dataTable_Combined;
+float dataMin = MAX_FLOAT;
+float dataMax = MIN_FLOAT;
+String source = "Atlanta";
+int source_x = 183;
+int source_y = 180;
+float scaler = 1;
+int texsize_font = 10;
+int radius = 5;
+
+void setup() {
+  size(1125, 559);
+  mapImage = loadImage("worldmap.png");
+  dataTable_D = Table("domestic_dest.csv");
+  dataTable_I = Table("international_dest.csv");
+  
+  
+}
+
+void draw()
+{
+translate(mouseX, mouseY);
+scale(scaler);
+translate(-mouseX, -mouseY);
+background(255);
+image(mapImage,0,0);
+ // Drawing attributes for the ellipses   
+  smooth();
+  fill(255,38,0);
+  noStroke();
+   
+  ellipse(source_x, source_y, 5, 5);
+  if(key == 'd')
+  {
+  stroke(4, 255, 0);
+  DrawingLines(dataTable_D); 
+  }
+  else if(key == 'i')
+  {
+  stroke(10,3,255);
+  DrawingLines(dataTable_I);
+  }
+  else
+  {
+  stroke(4, 255, 0);
+  DrawingLines(dataTable_D);
+  stroke(10,3,255);
+  DrawingLines(dataTable_I);
+  }
+ }
+
+void DrawingLines(Table dataTable)
+{
+  if( dist(source_x,source_y,mouseX,mouseY)<radius)
+  {
+  text("Atlanta",mouseX,mouseY);
+  }
+  float stroke_weight = 3.2;
+  strokeWeight(stroke_weight);
+  rowCount = dataTable.getRowCount();
+  for (int row = 0; row < rowCount; row++) 
+  {
+    float x = dataTable.getInt(row, 1);  // column 1
+    float y = dataTable.getInt(row, 2);  // column 2
+    fill(255,38,0);
+    ellipse(x, y, radius, radius);
+    noFill();
+    strokeWeight(stroke_weight-=0.3);
+    bezier(source_x, source_y, source_x-20, source_y-20, x-20, y-20, x, y);
+    if(dist(x,y,mouseX,mouseY) < radius )
+    {
+    int width_rec = 120;
+    int height_rec = 40;
+    strokeWeight(0);
+    fill(255,250,93);
+    rect(x,y,width_rec,height_rec);
+    fill(5,5,0);
+    float tS = height_rec;
+    textSize(texsize_font);
+    String details = dataTable.getString(row, 0);
+    details=details + "\n Passenger Count :" + dataTable.getString(row,3);
+    details=details + "\n Carrier :" + dataTable.getString(row,4); 
+    while(textWidth(details)>width_rec)
+      {
+      tS-=1;
+      textSize(tS);
+      }  
+    text(details,x + (width_rec - textWidth(details))/2,y + height_rec/5);
+    }
+   }
+}
+
+void keyPressed()
+{
+if(key == 'z') {
+
+scaler += 0.5;}
+if(key == 'x') {
+
+scaler -= 0.5;}
+}
+
+void mousePressed()
+{
+  
+ 
+  if(mouseButton == LEFT)
+  {
+     println(mouseX + " " + mouseY);
+  }
+  else if(mouseButton == RIGHT)
+  {println("right");}
+  
+}
+
+ 
+
+
+Table Table(String Filename)
+{
+String[] lines = loadStrings(Filename); 
+Table dataTable2 = new Table();
+dataTable2.addColumn("Location");
+dataTable2.addColumn("x");
+dataTable2.addColumn("y");
+dataTable2.addColumn("Passenger");
+dataTable2.addColumn("Carrier");
+dataTable2.addColumn("Type_Flight");
+
+for(int i = 0; i < lines.length; i++){ 
+      TableRow dr = dataTable2.addRow();
+      String[] tokens = split(lines[i], ';');
+      dr.setString("Location",tokens[0]); 
+      dr.setInt("x",int(tokens[1]));
+      dr.setInt("y",int(tokens[2]));
+      String[] token_passenger = split(tokens[3],',');
+      String passenger_count = "";
+      for(int x=0;x<token_passenger.length;x++)
+      {
+      passenger_count = passenger_count + token_passenger[x];
+      }
+      dr.setInt("Passenger",int(passenger_count)); 
+      dr.setString("Carrier",tokens[4]);
+      dr.setString("Type_Flight",tokens[5]);
+      
+} 
+return dataTable2;
+}
